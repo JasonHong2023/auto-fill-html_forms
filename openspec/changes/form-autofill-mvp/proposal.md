@@ -39,8 +39,8 @@ This change delivers the first working end-to-end MVP, covering the four extensi
   No schema validation library. Confirmed: the contract is a flat field-to-question-to-answer mapping that hand-written validation handles (Q3 resolved, 2026-09-27).
 - **敏感欄位採關鍵字清單，比對 A–F 六類**（憑證、信用卡、銀行帳戶、身分證件、醫療、財務），英文整詞比對、中文子字串比對（Q1、Q7 已決議，詳見 design.md D4.1）。
   Sensitive fields are detected by a keyword list covering six categories, matched on whole words in English and substrings in CJK (Q1 and Q7 resolved; see design.md D4.1).
-- **暫不導入 TypeScript 建置流程**，擴充功能端維持 vanilla JS（Q2 尚未取得答覆，暫定值）。
-  No TypeScript build step for now; the extension stays vanilla JS (Q2 still unanswered; provisional).
+- **不引入任何建置流程**：TypeScript、Vite、bundler、transpiler 一律不用。已確認（Q2）：使用者要求「載入未封裝項目」就能跑，擴充功能端為純 vanilla JS，`manifest.json` 置於專案根目錄。
+  No build step of any kind — no TypeScript, Vite, bundler, or transpiler. Confirmed (Q2): the user requires it to run from "Load unpacked", so the extension is plain vanilla JS with `manifest.json` at the project root.
   Explicit non-goals (see design.md): no iframe form support, no deep integration with controlled React components, no form auto-submission, no multi-tab batch processing.
 
 ---

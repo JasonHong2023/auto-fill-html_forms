@@ -2,7 +2,8 @@
 
 - [ ] 1.1 建立 `backend/package.json`，宣告 `express` 相依與 `start` 指令（依 D8 與 R9，版本待使用者確認後鎖定）— expect `npm install` 可成功安裝
 - [ ] 1.2 建立 `backend/.env.example`，列出 `LITELLM_BASE_URL`、`LITELLM_API_KEY`、`LITELLM_MODEL`、`BACKEND_PORT` 四個變數且值為佔位符 — expect 不得含任何真實金鑰
-- [ ] 1.3 建立 `manifest.json`（MV3），宣告 `activeTab`/`scripting`/`storage` 權限、`background.js` service worker、`popup.html` action 與 `<all_urls>` content script — expect 可在 `chrome://extensions/` 成功載入未封裝項目
+- [ ] 1.3 建立 `manifest.json`（MV3，置於**專案根目錄**），宣告 `activeTab`/`scripting`/`storage` 權限、`background.js` service worker、`popup.html` action 與 `<all_urls>` content script — expect 在 `chrome://extensions/` 直接指向專案根目錄「載入未封裝項目」即可成功載入
+- [ ] 1.4 確認擴充功能端無任何建置流程（依 Q2 決議）：全部 `.js` 為瀏覽器可直接執行的原生碼，無 `import`/`export`、無 npm 套件、無 `dist/` 產物目錄，唯一的 `package.json` 位於 `backend/` — expect 根目錄除原始碼與文件外不含任何建置產物
 
 ## 2. backend-api（後端 API）/ Backend API
 

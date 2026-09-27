@@ -26,7 +26,7 @@ This project writes the user's **real personal data**, so every failure path mus
 | 項目 / Item | 選擇 / Choice |
 |---|---|
 | Manifest | Chrome **Manifest V3**（不可降級） |
-| 語言 / Language | Vanilla JavaScript（無框架、無建置步驟）— 是否導入 TypeScript + Vite 待確認（Q2） |
+| 語言 / Language | Vanilla JavaScript（無框架、**無建置步驟**）— `manifest.json` 置於專案根目錄，「載入未封裝項目」即可執行（Q2 已確認） |
 | 權限 / Permissions | `activeTab`、`scripting`、`storage` |
 | 設定儲存 / Settings | `chrome.storage.local`，**僅存非敏感設定**（後端 base URL、模型名稱） |
 | 入口 / Entry points | `popup.html` / `options.html`（設定頁） |
@@ -125,8 +125,8 @@ openspec validate <name> --strict
 
 ## Open Questions / 待確認事項
 
-詳見 `reference/rules_20260724.md` R15。已解決：Q1（採關鍵字清單）、Q3（不引入 schema 驗證函式庫）、Q7（關鍵字清單初版，見 design.md D4.1）。仍待確認：Q2（vanilla JS 與否）、Q4（逾時秒數與降級）、Q5（資料持久化）、Q6（多頁籤併發，已列 Non-Goal）。Q2 為唯一阻塞實作架構選擇的未決項目。
-See R15 of the project rules. Resolved: Q1 (keyword list), Q3 (no schema validation library), Q7 (initial keyword list; see design.md D4.1). Still open: Q2 (vanilla JS or not), Q4 (timeout seconds and degradation), Q5 (data persistence), Q6 (multi-tab concurrency; already a Non-Goal). Q2 is the only open item that blocks an implementation architecture choice.
+詳見 `reference/rules_20260724.md` R15。已解決：Q1（採關鍵字清單）、Q2（維持 vanilla JS，無建置流程，「載入未封裝項目」即可執行）、Q3（不引入 schema 驗證函式庫）、Q7（關鍵字清單初版，見 design.md D4.1）。仍待確認：Q4（逾時秒數與降級）、Q5（資料持久化）、Q6（多頁籤併發，已列 Non-Goal）。**目前沒有阻塞實作的未決事項**；Q4 與 Q5 的暫定值已足以支撐實作且不會違反 R6.7 與 R18.5。
+See R15 of the project rules. Resolved: Q1 (keyword list), Q2 (vanilla JS, no build step, runs from "Load unpacked"), Q3 (no schema validation library), Q7 (initial keyword list; see design.md D4.1). Still open: Q4 (timeout seconds and degradation), Q5 (data persistence), Q6 (multi-tab concurrency; already a Non-Goal). **No open item blocks implementation**; the provisional values for Q4 and Q5 suffice and violate neither R6.7 nor R18.5.
 
 ---
 

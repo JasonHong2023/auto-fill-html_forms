@@ -46,8 +46,8 @@ This change spans four capabilities, introduces one new dependency (Express), an
   No deep framework controlled-component integration; event-based compatibility only, without reverse-engineering React's value tracker.
 - **不導入 schema 驗證函式庫**（zod / ajv）。已決議（Q3）：契約為「欄位 → 問題 → 答案」的扁平對應，`backend/validate.js` 手寫驗證即可達成同一行為。
   No schema validation library (zod / ajv). Resolved in Q3: the contract is a flat field-to-question-to-answer mapping that hand-written validation in `backend/validate.js` handles.
-- **暫不導入 TypeScript 建置流程**，擴充功能端維持 vanilla JS。此為暫定值，Q2 尚未取得使用者答覆。
-  No TypeScript build step for now; the extension stays vanilla JS. This is provisional — Q2 is still unanswered.
+- **不導入任何建置流程**（TypeScript、Vite、bundler、transpiler 一律不用）。已決議（Q2）：使用者要求「載入未封裝項目」就能跑，`manifest.json` 置於專案根目錄，所有 `.js` 皆為瀏覽器可直接執行的原生碼。
+  No build step whatsoever (no TypeScript, Vite, bundler, or transpiler). Resolved in Q2: the user requires it to run from "Load unpacked", so `manifest.json` sits at the project root and every `.js` file is native code the browser runs directly.
 - **不實作 `PRD.md`**。依 R3，`openspec/specs/` 為權威來源，`PRD.md` 待規格穩定後才撰寫。
   No `PRD.md`; per R3 the specs are authoritative and the PRD comes later.
 
@@ -213,6 +213,7 @@ Label association is inconsistent on some sites, degrading `questionText` qualit
 | # | 問題 / Question | 決議 / Resolution | 日期 |
 |---|---|---|---|
 | Q1 | 敏感欄位判定採「關鍵字清單」還是「ML / 語意分類」？ | **採關鍵字清單（D4）**。ML / 語意分類留待有實際誤判率數據後再評估。 | 2026-09-27 |
+| Q2 | 擴充功能端維持 vanilla JS，還是導入 TypeScript + Vite 建置流程？ | **維持 vanilla JS，不導入任何建置流程。** 使用者指示：「載入未封裝項目」就能跑。`manifest.json` 置於專案根目錄，所有 `.js` 檔案皆為瀏覽器可直接執行的原生碼，不經任何 bundler、transpiler 或打包。 | 2026-09-27 |
 | Q3 | 後端是否引入 schema 驗證函式庫（zod / ajv）？ | **不引入。手動驗證即可。** 使用者理由：本工具是「看到問題才依照問題要回答的格做作答」，請求／回應契約是「欄位 → 問題 → 答案」的扁平對應，不存在需要整份 schema 描述的複雜巢狀結構，因此 schema 驗證函式庫帶來的是額外相依與額外學習成本，換不到對應的價值。 | 2026-09-27 |
 | Q7 | 敏感欄位關鍵字清單的初始內容由誰定案？ | **使用者指示涵蓋範圍，設計層擬定具體清單。** 使用者指示：密碼、信用卡、銀行帳戶等類欄位一律不填。設計層依此擬定 A–F 六類共 6 大類關鍵字，其中 A/B/C 為使用者明確指定（⚑），D/E/F 為設計層判斷（◇），待使用者覆核。見 **D4.1**。 | 2026-09-27 |
 
@@ -224,11 +225,12 @@ The contract's authoritative definition stays in the `backend-api` spec (R3 requ
 
 | # | 問題 / Question | 影響範圍 / Blocks | 暫定值 / Provisional |
 |---|---|---|---|
-| Q2 | 擴充功能端維持 vanilla JS，還是導入 TypeScript + Vite 建置流程？ | 影響 tasks 1.3 與 3、4、5 全部檔案的建立方式 | vanilla JS（沿用 `auto-fill-html_forms.md` 初版作法）。**此題尚未取得使用者答覆。** |
-| Q4 | 後端對 LiteLLM 的逾時秒數為何？失敗時是否降級為本地啟發式猜測？ | `backend-worker` task 4.3、`backend/llm.js` task 2.1 | 逾時存在但數值待定；不做降級（失敗即如實回報，符合 R18.5） |
+| Q4 | 後端對 LiteLLM 的逾時秒數為何？失敗時是否降級為本地啟發式猜測？ | `background-worker` task 4.3、`backend/llm.js` task 2.1 | 逾時存在但數值待定；不做降級（失敗即如實回報，符合 R18.5） |
 | Q5 | 使用者資料是否需要本地持久化以支援「重新填寫」？ | `extension-ui` Options 儲存範圍 | 不持久化 |
 | Q6 | 多頁籤同時觸發如何避免重複呼叫後端？ | 無（已列為 Non-Goal，後續變更處理） | 不處理 |
 
-**Q2 為目前唯一阻塞實作架構選擇的未決項目**：它決定 1.3、3.1–3.7、4.1–4.4、5.1–5.6 這些 task 要不要建立 `package.json` 與建置設定。Q4、Q5 的暫定值已足以支撐實作，且落入 R18.5 與 R6.7 的禁止行為範圍內，不會產生違規風險。
+**目前沒有阻塞實作的未決事項 / No open item blocks implementation**：Q1、Q2、Q3、Q7 已全部決議。Q4 與 Q5 的暫定值已足以支撐實作，且落在 R18.5 與 R6.7 的禁止行為範圍內——逾時必定存在且失敗必定如實回報，資料必定不落地持久化，兩者都不會產生違規風險。Q6 為 Non-Goal，實作時不需任何處理。
 
-Q2 is the only remaining open item that blocks an implementation choice: it determines whether tasks 1.3, 3.1–3.7, 4.1–4.4, and 5.1–5.6 need a `package.json` and build config. The provisional values for Q4 and Q5 are sufficient to implement and sit inside the R18.5 / R6.7 prohibitions, so they carry no compliance risk.
+Q1, Q2, Q3, and Q7 are all resolved, so nothing blocks implementation. The provisional values for Q4 and Q5 are sufficient: a timeout must exist and failures must be reported honestly (R18.5), and data must not be persisted (R6.7). Neither provisional value can produce a compliance risk. Q6 is a Non-Goal and needs no implementation work.
+
+**若事後推翻 Q2 的成本 / Cost of reversing Q2**：導入 TypeScript + Vite 需改寫全部擴充功能檔案、加入 `package.json` 與建置設定、並在 `manifest.json` 改指 dist 路徑。因無建置流程的程式碼本身即為最終形態，此項推翻成本可控，但代價是全部擴充功能檔案需重寫一次。
