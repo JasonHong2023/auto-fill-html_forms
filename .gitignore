@@ -1,0 +1,25 @@
+# Node.js / backend
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Secrets — R6.4：LiteLLM 金鑰絕不進 Git
+.env
+.env.*
+!.env.example
+
+# Build artifacts (R6.2)
+dist/
+build/
+*.zip
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+logs/
+*.log
