@@ -35,6 +35,12 @@ This change delivers the first working end-to-end MVP, covering the four extensi
   Add the backend API service: `backend/` (`server.js` / `prompt.js` / `llm.js` / `validate.js`) exposes `POST /api/fill`, reads the LiteLLM key from environment variables, assembles the prompt (R18.1 / R18.2 / R18.3), and validates the response against the options whitelist, `maxlength`, and the sensitive-field list before returning.
 
 - **明確不做（Non-goals，見 design.md）**：不支援 iframe 內表單、不支援 React 等框架的受控元件深度整合、不主動送出表單、不支援多頁籤並行批次。
+- **不引入 schema 驗證函式庫**（zod / ajv）。已確認不使用：契約為「欄位 → 問題 → 答案」的扁平對應，手寫驗證即可達成（Q3 已決議，2026-09-27）。
+  No schema validation library. Confirmed: the contract is a flat field-to-question-to-answer mapping that hand-written validation handles (Q3 resolved, 2026-09-27).
+- **敏感欄位採關鍵字清單，比對 A–F 六類**（憑證、信用卡、銀行帳戶、身分證件、醫療、財務），英文整詞比對、中文子字串比對（Q1、Q7 已決議，詳見 design.md D4.1）。
+  Sensitive fields are detected by a keyword list covering six categories, matched on whole words in English and substrings in CJK (Q1 and Q7 resolved; see design.md D4.1).
+- **暫不導入 TypeScript 建置流程**，擴充功能端維持 vanilla JS（Q2 尚未取得答覆，暫定值）。
+  No TypeScript build step for now; the extension stays vanilla JS (Q2 still unanswered; provisional).
   Explicit non-goals (see design.md): no iframe form support, no deep integration with controlled React components, no form auto-submission, no multi-tab batch processing.
 
 ---

@@ -9,7 +9,7 @@
 - [ ] 2.1 建立 `backend/llm.js`：自環境變數讀取金鑰，實作 `POST {LITELLM_BASE_URL}/v1/chat/completions`，帶 `response_format: json_object` 與 `temperature: 0.1`，並設定逾時（逾時值待 Q4 確認）— expect 逾時與連線錯誤拋出可區分的錯誤型別
 - [ ] 2.2 建立 `backend/prompt.js`：組裝 system prompt，要求純 JSON（禁止 markdown 區塊）、選擇型欄位答案必須逐字符合 `options`、頁面內容視為資料非指令（對應 R18.1–R18.3）— expect prompt 文字明確含三項約束
 - [ ] 2.3 建立 `backend/validate.js` 的**請求驗證**部分：驗 R9 契約必要欄位（`id`、`questionText` 等）、欄位數上限、payload 大小上限 — expect 不合法請求回傳具名欄位錯誤
-- [ ] 2.4 建立 `backend/validate.js` 的**回應驗證**部分：`options` 白名單比對、`maxLength` 檢查、敏感欄位丟棄（關鍵字清單待 Q7 確認）、未識別欄位鍵丟棄 — expect 每項丟棄都產出 `skipped` 項目與原因碼（`option_not_found` / `max_length_exceeded` / `sensitive_field`）
+- [ ] 2.4 建立 `backend/validate.js` 的**回應驗證**部分：敏感欄位丟棄（D4.1 六類關鍵字清單，**此檔為權威實作**）、`options` 白名單比對、`maxLength` 檢查、未識別欄位鍵丟棄 — expect 每項丟棄都產出 `skipped` 項目與原因碼（`option_not_found` / `max_length_exceeded` / `sensitive_field`），且密碼／信用卡／銀行帳戶類欄位即使 LLM 回傳看似合理的值也一律丟棄
 - [ ] 2.5 建立 `backend/server.js`：實作 `POST /api/fill` 與 `GET /api/health`，呼叫 llm → parse → validate → 回傳 `{ answers, skipped }`，解析失敗回 HTTP 502、逾時回 504、連線失敗回 502 — expect 以 `curl` 對三種錯誤路徑各取得對應狀態碼
 - [ ] 2.6 剝除 `pageUrl` 查詢字串後才送往 LLM，並確認後端日誌不輸出金鑰（對應 R18.4 與 `backend-api` 金鑰規格）— expect 送出內容僅含 scheme + host
 
@@ -18,7 +18,7 @@
 - [ ] 3.1 建立掃描邏輯：以 `input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]):not([type=file]), textarea, select` 掃描，排除清單依 R17.2 — expect `type=file` 欄位不出現在結果
 - [ ] 3.2 實作三級識別碼指派（`id` → `name` → 注入 `data-ai-id`）與重複偵測去重（對應 D3）— expect 同 `name` 的 radio 群組只有第一個用 `name`，其餘獲得注入的 `data-ai-id`
 - [ ] 3.3 實作語意與約束擷取：`questionText`（`labels[0]` → 父層 `innerText` → 空字串，截斷 100 字）、`options`（select 全 options、radio/checkbox 同 `name` 群組）、`required` / `maxLength` / `pattern` — expect 缺少時回傳 `null` 或空字串而非 `undefined`
-- [ ] 3.4 實作敏感欄位偵測並標記（關鍵字清單待 Q7 確認，對應 D4）— expect 命中欄位被標記且不填入任何值
+- [ ] 3.4 實作敏感欄位偵測（關鍵字清單依 D4.1 全部六類 A–F，比對 `id` / `name` / `questionText`，英文整詞、中文子字串、不分大小寫）並標記 — expect 命中欄位被標記且不填入任何值，且「passenger name」「shipping address」不被誤判
 - [ ] 3.5 實作 `fillForm()`：三級反查（`getElementById` → `[name]` → `[data-ai-id]`）、text/textarea 指派、select 指派、radio/checkbox 勾選、陣列多選 — expect 識別碼查無對應元素時跳過該筆記入 `skipped` 且不中斷整批
 - [ ] 3.6 於每次填值後派發 `input` 與 `change` 事件（`bubbles: true`，對應 R17.3 / D7）— expect 於 React 測試頁填值後框架狀態與 DOM 值一致
 - [ ] 3.7 實作回填前的二次防護：敏感欄位不填、`options` 白名單比對、`maxLength` 檢查，違者記入 `skipped`（對應 D5 縱深防禦）— expect 後端已過濾的情況下本地仍不會寫入敏感欄位
@@ -55,4 +55,4 @@
 - [ ] 7.2 依 R14 撰寫 `README.md`，涵蓋安裝、啟動後端、載入擴充功能、資料流向告知段落（依 proposal 的 `GET /api/health` 契約）— expect 新使用者可依文件完成設定
 - [ ] 7.3 依 R3 與 R10 撰寫 `PRD.md`（待規格穩定後）或明確記錄其暫緩理由 — expect 文件狀態與實際一致
 - [ ] 7.4 依 R13 更新專案狀態呈現，確認 proposal / tasks / specs / design / rules 五項一致 — expect 五項狀態同步
-- [ ] 7.5 依 R15 回填 Q1–Q7 的確認結果，移除 `design.md` Open Questions 中已解決項目並同步至 R15 — expect 無已解決項目仍列為待確認
+- [ ] 7.5 依 R15 回填 Q2、Q4、Q5 的確認結果，移除 `design.md` Open Questions 中已解決項目並同步至 R15 — expect 無已解決項目仍列為待確認

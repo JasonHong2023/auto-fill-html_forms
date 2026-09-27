@@ -1,7 +1,7 @@
 # Project Context
 
 > 專案：通用 HTML 表單自動填寫外掛 / Project: Generic HTML Form Auto-Filler Extension
-> 規則文件 / Rules: [`reference/rules_20260724.md`](../../reference/rules_20260724.md)（v1.1）
+> 規則文件 / Rules: [`reference/rules_20260724.md`](../reference/rules_20260724.md)（v1.2）
 > 本文件為 OpenSpec 的專案技術棧與慣例來源，內容須與 R9（技術棧鎖定）保持一致。
 > This file is the source of truth for OpenSpec project stack and conventions,
 > and must stay consistent with R9 (Tech Stack Lock) in the project rules.
@@ -125,8 +125,8 @@ openspec validate <name> --strict
 
 ## Open Questions / 待確認事項
 
-詳見 `reference/rules_20260724.md` R15 的 Q1–Q6。實作前必須逐項確認，不得自行假設。
-See Q1–Q6 in R15 of the project rules. Each must be confirmed before implementation; do not assume defaults.
+詳見 `reference/rules_20260724.md` R15。已解決：Q1（採關鍵字清單）、Q3（不引入 schema 驗證函式庫）、Q7（關鍵字清單初版，見 design.md D4.1）。仍待確認：Q2（vanilla JS 與否）、Q4（逾時秒數與降級）、Q5（資料持久化）、Q6（多頁籤併發，已列 Non-Goal）。Q2 為唯一阻塞實作架構選擇的未決項目。
+See R15 of the project rules. Resolved: Q1 (keyword list), Q3 (no schema validation library), Q7 (initial keyword list; see design.md D4.1). Still open: Q2 (vanilla JS or not), Q4 (timeout seconds and degradation), Q5 (data persistence), Q6 (multi-tab concurrency; already a Non-Goal). Q2 is the only open item that blocks an implementation architecture choice.
 
 ---
 

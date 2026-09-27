@@ -101,6 +101,12 @@ The backend SHALL validate every LLM-produced value before returning it, and SHA
 - **WHEN** a requested field is marked as sensitive and the LLM returns a value for it
 - **THEN** the backend discards the value and records it in `skipped` with a `sensitive_field` reason
 
+#### Scenario: 憑證與財務憑證欄位一律丟棄
+- **WHEN** 請求中包含密碼、信用卡（含 CVV 與持卡人）、銀行帳戶類欄位，且 LLM 回傳了這些欄位的值
+- **THEN** 後端丟棄全部這些值並各自以 `sensitive_field` 記入 `skipped`，不因數量或格式看似合理而放行
+- **WHEN** the request contains password, credit card (including CVV and cardholder), or bank account fields and the LLM returns values for them
+- **THEN** the backend discards all such values and records each in `skipped` with a `sensitive_field` reason, regardless of whether the value looks plausible
+
 #### Scenario: 未識別的欄位一律跳過
 - **WHEN** LLM 回傳的答案鍵不存在於請求的欄位識別碼集合中
 - **THEN** 後端丟棄該鍵，不將其回傳給擴充功能

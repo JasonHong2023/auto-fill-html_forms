@@ -170,3 +170,33 @@ The content script MUST NOT write any LLM-generated value into fields identified
 - **THEN** 所有 `sensitive_field` 項目均以欄位名稱列於摘要中，提示使用者手動填寫
 - **WHEN** a fill operation completes
 - **THEN** every `sensitive_field` entry is listed by field name in the summary, prompting the user to fill it manually
+
+#### Scenario: 憑證類欄位不被填入
+- **WHEN** 頁面包含密碼、確認密碼、OTP 或安全碼欄位
+- **THEN** 這些欄位一律不填入，並各自以 `sensitive_field` 原因記入 `skipped`
+- **WHEN** the page contains password, confirm-password, OTP, or security-code fields
+- **THEN** none of them are filled, and each is recorded in `skipped` with a `sensitive_field` reason
+
+#### Scenario: 信用卡欄位不被填入
+- **WHEN** 頁面包含信用卡號、持卡人姓名、CVV 或卡片有效日期欄位
+- **THEN** 這些欄位一律不填入，並各自以 `sensitive_field` 原因記入 `skipped`
+- **WHEN** the page contains credit card number, cardholder name, CVV, or card expiry fields
+- **THEN** none of them are filled, and each is recorded in `skipped` with a `sensitive_field` reason
+
+#### Scenario: 銀行帳戶欄位不被填入
+- **WHEN** 頁面包含銀行帳號、存款帳號、IBAN、SWIFT 或路由號碼欄位
+- **THEN** 這些欄位一律不填入，並各自以 `sensitive_field` 原因記入 `skipped`
+- **WHEN** the page contains bank account, deposit account, IBAN, SWIFT, or routing number fields
+- **THEN** none of them are filled, and each is recorded in `skipped` with a `sensitive_field` reason
+
+#### Scenario: 比採整詞比對以避免誤判
+- **WHEN** 欄位名稱為「passenger name」或「shipping address」，且不含任何敏感關鍵字
+- **THEN** 該欄位**不**被判定為敏感，且可被正常填入；`pass` 與 `pin` 不得以子字串方式命中
+- **WHEN** a field is named "passenger name" or "shipping address" and contains no sensitive keyword
+- **THEN** it is **not** treated as sensitive and may be filled normally; `pass` and `pin` must not match as substrings
+
+#### Scenario: 一般個人資料不誤判為敏感
+- **WHEN** 欄位名稱為「使用者名稱」、「電子郵件」、「姓名」或「地址」
+- **THEN** 這些欄位**不**被判定為敏感，本工具仍可協助填寫
+- **WHEN** a field is named "username", "email", "name", or "address"
+- **THEN** it is **not** treated as sensitive, and the tool may still fill it

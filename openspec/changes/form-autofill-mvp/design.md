@@ -44,8 +44,10 @@ This change spans four capabilities, introduces one new dependency (Express), an
   No multi-tab batch filling.
 - **不做深度的框架受控元件整合**。以 `input` / `change` 事件達成相容為限，不解析 React 的 value tracker。
   No deep framework controlled-component integration; event-based compatibility only, without reverse-engineering React's value tracker.
-- **不導入 schema 驗證函式庫**（zod / ajv）與 TypeScript 建置流程。兩者皆為待確認事項（Q2、Q3），MVP 先以手動驗證函式達成同一行為。
-  No schema validation library and no TypeScript build step; both are open questions (Q2, Q3) and the MVP achieves the same behaviour with hand-written validation.
+- **不導入 schema 驗證函式庫**（zod / ajv）。已決議（Q3）：契約為「欄位 → 問題 → 答案」的扁平對應，`backend/validate.js` 手寫驗證即可達成同一行為。
+  No schema validation library (zod / ajv). Resolved in Q3: the contract is a flat field-to-question-to-answer mapping that hand-written validation in `backend/validate.js` handles.
+- **暫不導入 TypeScript 建置流程**，擴充功能端維持 vanilla JS。此為暫定值，Q2 尚未取得使用者答覆。
+  No TypeScript build step for now; the extension stays vanilla JS. This is provisional — Q2 is still unanswered.
 - **不實作 `PRD.md`**。依 R3，`openspec/specs/` 為權威來源，`PRD.md` 待規格穩定後才撰寫。
   No `PRD.md`; per R3 the specs are authoritative and the PRD comes later.
 
@@ -81,13 +83,45 @@ This change spans four capabilities, introduces one new dependency (Express), an
 
 ### D4 — 敏感欄位以「欄位名稱 / label 關鍵字」判定，MVP 先用規則式
 
-**決策 / Decision**：MVP 以欄位的 `id`、`name`、`questionText` 比對一份關鍵字清單（身分證、護照、信用卡、CVV、銀行帳號、密碼、病歷等）判定敏感欄位，命中即留空並記入 `skipped`。
+**決策 / Decision**：MVP 以欄位的 `id`、`name`、`questionText` 比對一份關鍵字清單（清單內容見 **D4.1**：憑證、信用卡、銀行帳戶、身分證件、醫療、財務六類），命中即留空並記入 `skipped`。
 
-**理由 / Rationale**：規則式可預測、可測試、無額外相依，符合 MVP 定位。Q1 已登記為待確認事項，ML / 語意分類留待有實際誤判率數據後再評估。
+**理由 / Rationale**：規則式可預測、可測試、無額外相依，符合 MVP 定位。Q1 已決議採關鍵字清單；ML / 語意分類留待有實際誤判率數據後再評估。
 
 **替代方案 / Alternatives considered**：ML / 語意分類 — 覆蓋率可能更好，但引入模型相依且難以測試。完全不保護 — 直接違反 R6.6，本專案最高風險。
 
 **已知不足 / Known limitation**：關鍵字清單會漏掉用詞 unusual 的敏感欄位。緩解見 R3 風險項目。
+
+#### D4.1 — 敏感欄位關鍵字清單初版（Q7 已確認 / Initial sensitive-field keyword list, Q7 resolved）
+
+使用者指示：密碼、信用卡、銀行帳戶這類欄位**一律不填**。以下清單為該指示的具體化。**標示 ⚑ 者為使用者明確指定；標示 ◇ 者為本次設計提出的判斷項目，若您認為過寬或過窄請直接調整。**
+
+The user directed that passwords, credit cards, and bank accounts must never be filled. The list below operationalises that instruction. **⚑ marks items the user named explicitly; ◇ marks judgement calls from this design — trim or extend them as you see fit.**
+
+**比對規則 / Matching rule**（避免誤判的關鍵，務必照做）：
+
+1. 比對對象為欄位的 `id`、`name`、`questionText` 任一者，**任一命中即判定為敏感**。
+   Match against a field's `id`, `name`, or `questionText`; a hit on any one of them marks the field sensitive.
+2. 比對時**不分大小寫**。
+   Matching is case-insensitive.
+3. **英文關鍵字採整詞比對**（`\b` 邊界），中文關鍵字採子字串比對。
+   **English keywords match on whole words** (`\b` boundaries); CJK keywords match as substrings.
+   > 原因：英文若用子字串比對，`pass` 會命中 `passenger`、`pin` 會命中 `shipping`、`cc` 會命中 `account`，造成大量誤判而讓工具失去實用性。中文無詞界概念，只能用子字串。
+   > Rationale: substring matching in English makes `pass` hit `passenger`, `pin` hit `shipping`, and `cc` hit `account`. CJK has no word boundaries, so substring is the only option.
+4. **只列具體詞組，不列單字**。例如列 `account number` 而不列 `account`，因為 `account` 在一般網站也指「帳號名稱」，那不是敏感資料。
+   **List specific phrases, not bare words.** e.g. `account number`, never bare `account`, since a site may use `account` to mean an account name, which is not sensitive.
+
+| 類別 / Category | ⚑/◇ | 關鍵字 / Keywords |
+|---|---|---|
+| **A. 憑證 / Credentials** | ⚑ | `password`, `passwd`, `pwd`, `new password`, `old password`, `confirm password`, `passcode`, `pin`, `otp`, `security code`, `verification code`, `one-time code`, `密碼`, `確認密碼`, `新密碼`, `舊密碼`, `通行碼`, `驗證碼`, `動態驗證碼`, `簡訊驗證碼`, `安全碼` |
+| **B. 信用卡 / Credit card** | ⚑ | `credit card`, `credit card number`, `card number`, `cardholder name`, `cvv`, `cvc`, `csc`, `cid`, `card expiry`, `card expiration`, `信用卡`, `信用卡號`, `卡號`, `持卡人`, `卡片安全碼`, `卡效期`, `卡片有效日期`, `卡片到期日` |
+| **C. 銀行帳戶 / Bank account** | ⚑ | `bank account`, `bank account number`, `account number`, `routing number`, `iban`, `swift`, `bic`, `銀行帳號`, `銀行帳戶`, `存款帳號`, `帳戶號碼`, `銀行賬號`, `銀行代碼`, `聯行代號`, `路由號碼` |
+| **D. 身分證件 / Identity documents** | ◇ | `national id`, `id number`, `passport number`, `passport`, `driving license`, `driver's license`, `resident certificate`, `tax id`, `taxpayer number`, `身分證`, `身份證`, `身分證號`, `身份證號`, `身分證字號`, `身份證字號`, `身分證號碼`, `身份證號碼`, `護照號碼`, `護照`, `居留證`, `駕照`, `駕照號碼`, `統一編號`, `稅籍` |
+| **E. 醫療 / Medical** | ◇ | `medical record`, `medical history`, `health record`, `病歷`, `病歷號`, `就醫紀錄`, `醫療紀錄`, `健康檢查報告`, `過敏史`, `病史`, `健保卡號`, `健保號碼`, `血型` |
+| **F. 財務 / Financial** | ◇ | `annual income`, `monthly income`, `net assets`, `savings`, `financial status`, `年收入`, `月收入`, `所得`, `年所得`, `財力`, `財力證明`, `存款`, `資產`, `淨資產`, `薪資`, `財務狀況` |
+
+**刻意不列入者 / Deliberately excluded**（避免把工具變得沒用）：`username` / `使用者名稱` / `account` / `email` / `name` / `address` / `telephone` — 這些雖屬個人資料，但不是憑證或財務憑證，且本工具的用途就是協助填寫一般資料。若您希望連這些也留白，請明確指示後再加入。
+
+**D 與 E、F 為本次設計提出的判斷項目**：使用者指示明確涵蓋 A、B、C 三類。D、E、F 是我依「LLM 絕無可能猜對，且猜錯代價高」的原則延伸。若您認為 D、E、F 會讓填表功能過度受限（例如某些報名表確實需要填年收入），可以要求移除 —— 該決策屬產品範圍，設計層不擅自定案。
 
 ### D5 — 敏感欄位清單在 content script 與 backend 雙端各做一次
 
@@ -130,7 +164,7 @@ Page-derived field text passes through the backend to the LLM provider. Mitigati
 
 **[R-2] 敏感欄位關鍵字清單會漏判 →**
 使用者若把身分證欄位命名為「證件號碼」而非清單中的「身分證字號」，該欄位會被填入幻覺值，而這正是 R6.6 要防止的情況。
-緩解：MVP 將關鍵字清單設計為易於追加的常數陣列並於 R14 列為變更時必須同步的文件項目；清單缺漏視為已知限制而非缺陷，Q1 啟動後以實際誤判率決定是否升級為語意分類。**本項為 MVP 已知的資料正確性風險，應在 Options 頁告知使用者逐欄檢視。**
+緩解：MVP 將關鍵字清單設計為易於追加的常數陣列並於 R14 列為變更時必須同步的文件項目；清單缺漏視為已知限制而非缺陷，待實際誤判率數據出現後再決定是否升級為語意分類（Q1 已決議先採關鍵字清單，升級與否屬後續變更）。**本項為 MVP 已知的資料正確性風險，應在 Options 頁告知使用者逐欄檢視。**
 The keyword list can miss sensitive fields with unusual names, which is exactly the harm R6.6 exists to prevent. Mitigation: keep the list as an easily extensible constant array registered in R14 as a must-sync document; treat misses as a known MVP limitation, not a defect, and let Q1 decide on semantic classification once real miss rates exist. **This is a known data-correctness risk; the Options page should tell users to review every field.**
 
 **[R-3] 使用者未啟動後端，Popup 按鈕無效 →**
@@ -174,21 +208,27 @@ Label association is inconsistent on some sites, degrading `questionText` qualit
 
 ## Open Questions / 待確認事項
 
-以下項目已於 `reference/rules_20260724.md` R15 登記，**實作相關 task 前必須取得使用者答覆**（R15：不得自行假設實作）。本節承接 R15 的 Q1–Q6，並標註影響本次變更哪些 task。
+### 已解決 / Resolved
 
-The following are registered in R15 of the project rules and **must be answered before implementing the affected tasks** (R15 forbids assuming an implementation). This section carries forward R15's Q1–Q6 and marks which tasks each one blocks.
+| # | 問題 / Question | 決議 / Resolution | 日期 |
+|---|---|---|---|
+| Q1 | 敏感欄位判定採「關鍵字清單」還是「ML / 語意分類」？ | **採關鍵字清單（D4）**。ML / 語意分類留待有實際誤判率數據後再評估。 | 2026-09-27 |
+| Q3 | 後端是否引入 schema 驗證函式庫（zod / ajv）？ | **不引入。手動驗證即可。** 使用者理由：本工具是「看到問題才依照問題要回答的格做作答」，請求／回應契約是「欄位 → 問題 → 答案」的扁平對應，不存在需要整份 schema 描述的複雜巢狀結構，因此 schema 驗證函式庫帶來的是額外相依與額外學習成本，換不到對應的價值。 | 2026-09-27 |
+| Q7 | 敏感欄位關鍵字清單的初始內容由誰定案？ | **使用者指示涵蓋範圍，設計層擬定具體清單。** 使用者指示：密碼、信用卡、銀行帳戶等類欄位一律不填。設計層依此擬定 A–F 六類共 6 大類關鍵字，其中 A/B/C 為使用者明確指定（⚑），D/E/F 為設計層判斷（◇），待使用者覆核。見 **D4.1**。 | 2026-09-27 |
 
-| # | 問題 / Question | 影響範圍 / Blocks |
-|---|---|---|
-| Q1 | 敏感欄位判定採「關鍵字清單」還是「ML / 語意分類」？本設計暫定關鍵字清單（D4）。 | `content-script` 敏感欄位 task、`backend/validate.js` |
-| Q2 | 擴充功能端維持 vanilla JS，還是導入 TypeScript + Vite？本設計暫定 vanilla JS。 | 影響全部擴充功能檔案的建立方式 |
-| Q3 | 後端是否引入 schema 驗證函式庫（zod / ajv）？本設計暫定手動驗證。 | `backend/validate.js`、`backend/server.js` 請求驗證 |
-| Q4 | 後端逾時時間具體值為何？失敗時是否降級為本地啟發式猜測？本設計暫定逾時存在但數值待定、無降級。 | `background-worker` 逾時 task、`backend/llm.js` |
-| Q5 | 使用者資料是否需要本地持久化以支援「重新填寫」？本設計暫定不持久化。 | `extension-ui` Options 儲存範圍 |
-| Q6 | 多頁籤同時觸發如何避免重複呼叫後端？本設計暫定不處理（Non-Goal）。 | 無（Non-Goal，後續變更） |
+**Q3 決議的連帶影響 / Consequence of the Q3 decision**：契約的權威定義仍保留在 `backend-api` 規格中（R3 要求跨能力契約須有單一權威定義處），但實作面以 `backend/validate.js` 的手寫函式達成，不引入函式庫。Q3 的理由同時強化了 D6——既然是「逐格作答」，每一格的驗證（選項白名單、`maxLength`、敏感欄位）就必須在該格產生答案的當下完成，這正是 `skipped` 逐項記錄原因碼的設計依據。
 
-**另有一項本設計提出、尚未登記於 R15 的問題 / One question raised by this design, not yet registered in R15：**
+The contract's authoritative definition stays in the `backend-api` spec (R3 requires a single authoritative location for cross-capability contracts), but the implementation uses hand-written functions in `backend/validate.js` with no library. The Q3 rationale reinforces D6: given a question-by-question answering model, each field's validation must happen at the moment that field's answer is produced — which is precisely why `skipped` records a reason code per item.
 
-| # | 問題 / Question | 說明 |
-|---|---|---|
-| Q7 | 敏感欄位關鍵字清單的初始內容由誰定案？ | D4 決定了「機制」（關鍵字比對）但未決定「清單內容」。清單直接決定 R6.6 的保護範圍，屬產品決策而非技術決策。建議由使用者提供初版清單，或授權依常見身分／財務欄位詞彙擬定後再由使用者覆核。 |
+### 仍待確認 / Still open
+
+| # | 問題 / Question | 影響範圍 / Blocks | 暫定值 / Provisional |
+|---|---|---|---|
+| Q2 | 擴充功能端維持 vanilla JS，還是導入 TypeScript + Vite 建置流程？ | 影響 tasks 1.3 與 3、4、5 全部檔案的建立方式 | vanilla JS（沿用 `auto-fill-html_forms.md` 初版作法）。**此題尚未取得使用者答覆。** |
+| Q4 | 後端對 LiteLLM 的逾時秒數為何？失敗時是否降級為本地啟發式猜測？ | `backend-worker` task 4.3、`backend/llm.js` task 2.1 | 逾時存在但數值待定；不做降級（失敗即如實回報，符合 R18.5） |
+| Q5 | 使用者資料是否需要本地持久化以支援「重新填寫」？ | `extension-ui` Options 儲存範圍 | 不持久化 |
+| Q6 | 多頁籤同時觸發如何避免重複呼叫後端？ | 無（已列為 Non-Goal，後續變更處理） | 不處理 |
+
+**Q2 為目前唯一阻塞實作架構選擇的未決項目**：它決定 1.3、3.1–3.7、4.1–4.4、5.1–5.6 這些 task 要不要建立 `package.json` 與建置設定。Q4、Q5 的暫定值已足以支撐實作，且落入 R18.5 與 R6.7 的禁止行為範圍內，不會產生違規風險。
+
+Q2 is the only remaining open item that blocks an implementation choice: it determines whether tasks 1.3, 3.1–3.7, 4.1–4.4, and 5.1–5.6 need a `package.json` and build config. The provisional values for Q4 and Q5 are sufficient to implement and sit inside the R18.5 / R6.7 prohibitions, so they carry no compliance risk.
